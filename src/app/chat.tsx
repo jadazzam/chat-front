@@ -19,7 +19,7 @@ const Chat = () => {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InZvbmd2YW5ndnVuZ3Zpbmd2b3VuZ0BleGFtcGxlLmNvbSIsIm5hbWUiOiJWb25nIHZhbmcgdnVuZyB2aW5nIHZvdW5nIiwiaWQiOiIyMCIsImlhdCI6MTc0ODM5NTE3NiwiZXhwIjoxNzQ4OTk5OTc2fQ.g0kcdDCCcVbOjkN-sRKkK8EBwzCbtAs8dZ9d2cPbdBs"
+                    "Authorization": `Bearer ${process.env.NEXT_PUBLIC_TOKEN}`
                 },
             })
             if (response) return response.json()
@@ -31,7 +31,6 @@ const Chat = () => {
 
     useEffect(() => {
         const res = getMessages().then(res => setMessages(res.messages))
-        console.log("res =>", res)
     }, []);
 
     const postMessage = async(content: string) => {
@@ -40,7 +39,7 @@ const Chat = () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InZvbmd2YW5ndnVuZ3Zpbmd2b3VuZ0BleGFtcGxlLmNvbSIsIm5hbWUiOiJWb25nIHZhbmcgdnVuZyB2aW5nIHZvdW5nIiwiaWQiOiIyMCIsImlhdCI6MTc0ODM5NTE3NiwiZXhwIjoxNzQ4OTk5OTc2fQ.g0kcdDCCcVbOjkN-sRKkK8EBwzCbtAs8dZ9d2cPbdBs"
+                    "Authorization": `Bearer ${process.env.NEXT_PUBLIC_TOKEN}`
                 },
                 body: JSON.stringify({content: content, room_id: "3"})
             })
@@ -52,20 +51,17 @@ const Chat = () => {
 
     }
     const onSubmit: SubmitHandler<IFormInput> = async (data) => {
-        console.log("OnSubmit", data);
         const {content} = data
         if (content) {
-            console.log("create here CONTENT =>", content)
             const create:MessageType = await postMessage(content)
             if (create) setMessages(prevState => [...prevState, create])
 
         }
     }
 
-console.log("messages in component =>", messages)
     return (
         <>
-            {messages.map((msg: { id: string; content: string }) => {
+            {messages?.map((msg: { id: string; content: string }) => {
                 return <h3 key={msg.id}>{msg.content}</h3>
             })}
             <form onSubmit={handleSubmit(onSubmit)}>
