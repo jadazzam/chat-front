@@ -3,6 +3,7 @@ import {Button, TextField} from "@mui/material";
 import Form from "next/form";
 import {signIn} from "@/app/actions/login";
 import LoginFormWrapper from "@/app/components/Wrapper";
+import {useAuth} from "@/app/providers/auth";
 
 export const LoginForm = () => {
     return (
@@ -29,9 +30,16 @@ export const LoginForm = () => {
 }
 
 LoginForm.Wrapper = function LoginFormWrapper({children}: { children: ReactNode }) {
+    const setAuth = useAuth()?.setAuth;
     return (
-        <Form action={async (formData) => await signIn(formData)}>
-            {children}
-        </Form>
+        <div className='w-full bg-amber-400'>
+            <Form className='flex flex-col w-1/5 mx-auto' action={async (formData) => {
+                const res = await signIn(formData)
+                if (setAuth && res) setAuth(res)
+                return res
+            }}>
+                {children}
+            </Form>
+        </div>
     )
 }

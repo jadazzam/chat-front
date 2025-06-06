@@ -1,5 +1,4 @@
 export const signIn = async (formData: FormData): Promise<void> => {
-    console.log("signIn", formData);
     const email = formData.get("email");
     const password = formData.get("password");
 
@@ -16,7 +15,6 @@ export const signIn = async (formData: FormData): Promise<void> => {
             })
         })
         return await response.json()
-        return
     } catch (error) {
         console.error("Error sign in form", error)
         throw error;

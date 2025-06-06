@@ -4,8 +4,8 @@ import {UsersType} from "@/app/types/users";
 import {SignInType} from "@/app/types/auth";
 
 interface AuthContextType extends SignInType {
-    signIn: (credentials: SignInType) => void;
-    signOut: () => void;
+    setAuth: (credentials: SignInType) => void;
+    unSetAuth: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -24,7 +24,7 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
         }
     }, []);
 
-    const signIn = (credentials: SignInType): void => {
+    const setAuth = (credentials: SignInType): void => {
         const {user, token} = credentials;
         setUser(user);
         setToken(token);
@@ -32,7 +32,7 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
         if (token) localStorage.setItem("token", token);
     };
 
-    const signOut = (): void => {
+    const unSetAuth = (): void => {
         setUser(null);
         setToken(null);
         localStorage.removeItem("user");
@@ -40,7 +40,7 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
     };
 
     return (
-        <AuthContext.Provider value={{user, token, signIn, signOut}}>
+        <AuthContext.Provider value={{user, token, setAuth, unSetAuth}}>
             {children}
         </AuthContext.Provider>
     );
