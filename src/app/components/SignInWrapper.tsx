@@ -1,8 +1,8 @@
 "use client"
-import {LoginForm} from "./LoginForm";
+import {SignInForm} from "./SignInForm";
 
 
 const LoginFormWrapper = ({children}: { children: React.ReactNode }) => {
-    return <LoginForm.Wrapper>{children}</LoginForm.Wrapper>
+    return <SignInForm.Wrapper>{children}</SignInForm.Wrapper>
 }
 export default LoginFormWrapper
