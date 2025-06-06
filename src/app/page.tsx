@@ -1,4 +1,4 @@
-"use client"
+'use client'
 import dotenv from 'dotenv';
 dotenv.config();
 import React, {useEffect, useState} from 'react';
@@ -8,6 +8,7 @@ import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
+import {LoginForm} from "@/app/components/LoginForm";
 
 export default function Home() {
 
@@ -30,12 +31,12 @@ export default function Home() {
             console.log("Disconnected from socket");
         }
 
-        function handleRoomMessage(data) {
+        function handleRoomMessage(data:unknown) {
             console.log("Received message from room:", data);
         }
 
-        function handleTransportUpgrade(transport) {
-            setTransport(transport.name);
+        function handleTransportUpgrade(transport:{name: string}) {
+           setTransport(transport.name);
         }
 
         // Register events
@@ -46,10 +47,10 @@ export default function Home() {
 
         // Cleanup
         return () => {
-            // socket.off("connect", handleConnect);
-            // socket.off("disconnect", handleDisconnect);
-            // socket.off("room-message", handleRoomMessage);
-            // socket.io.engine.off("upgrade", handleTransportUpgrade);
+            socket.off("connect", handleConnect);
+            socket.off("disconnect", handleDisconnect);
+            socket.off("room-message", handleRoomMessage);
+            socket.io.engine.off("upgrade", handleTransportUpgrade);
         };
     });
 
@@ -57,6 +58,7 @@ export default function Home() {
 
     return (
       <div>
+          <LoginForm/>
           <div>
               <p>Status: { isConnected ? "connected" : "disconnected" }</p>
               <p>Transport: { transport }</p>
