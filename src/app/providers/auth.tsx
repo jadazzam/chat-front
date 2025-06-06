@@ -1,10 +1,10 @@
 'use client'
 import {createContext, useContext, useEffect, useState} from "react";
 import {UsersType} from "@/app/types/users";
-import {SignInType} from "@/app/types/auth";
+import {AuthType} from "@/app/types/auth";
 
-interface AuthContextType extends SignInType {
-    setAuth: (credentials: SignInType) => void;
+interface AuthContextType extends AuthType {
+    setAuth: (credentials: AuthType) => void;
     unSetAuth: () => void;
 }
 
@@ -16,20 +16,27 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
 
     // Load from localStorage on first render
     useEffect(() => {
-        const storedUser = localStorage.getItem("user");
-        const storedToken = localStorage.getItem("token");
-        if (storedUser && storedToken) {
-            setUser(JSON.parse(storedUser));
-            setToken(storedToken);
+        try {
+            const storedUser = localStorage.getItem("user");
+            const storedToken = localStorage.getItem("token");
+            if (storedUser && storedToken) {
+                setUser(JSON.parse(storedUser));
+                setToken(storedToken);
+            }
+        } catch (e) {
+            throw e
         }
     }, []);
 
-    const setAuth = (credentials: SignInType): void => {
+    const setAuth = (credentials: AuthType): void => {
         const {user, token} = credentials;
-        setUser(user);
-        setToken(token);
-        localStorage.setItem("user", JSON.stringify(user));
-        if (token) localStorage.setItem("token", token);
+        if (user && token) {
+
+            setUser(user);
+            setToken(token);
+            localStorage.setItem("user", JSON.stringify(user));
+            localStorage.setItem("token", token);
+        }
     };
 
     const unSetAuth = (): void => {
@@ -46,5 +53,4 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
     );
 };
 
-// Custom hook for easy access
 export const useAuth = () => useContext(AuthContext);

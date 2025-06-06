@@ -1,11 +1,11 @@
 import React, {ReactNode} from "react"
 import {Button, TextField} from "@mui/material";
 import Form from "next/form";
-import {signIn} from "@/app/actions/login";
-import LoginFormWrapper from "@/app/components/Wrapper";
+import {signIn} from "@/app/actions/auth";
+import LoginFormWrapper from "@/app/components/SignInWrapper";
 import {useAuth} from "@/app/providers/auth";
 
-export const LoginForm = () => {
+export const SignInForm = () => {
     return (
         <LoginFormWrapper>
             <TextField
@@ -29,14 +29,13 @@ export const LoginForm = () => {
     )
 }
 
-LoginForm.Wrapper = function LoginFormWrapper({children}: { children: ReactNode }) {
+SignInForm.Wrapper = function LoginFormWrapper({children}: { children: ReactNode }) {
     const setAuth = useAuth()?.setAuth;
     return (
         <div className='w-full bg-amber-400'>
             <Form className='flex flex-col w-1/5 mx-auto' action={async (formData) => {
                 const res = await signIn(formData)
                 if (setAuth && res) setAuth(res)
-                return res
             }}>
                 {children}
             </Form>
