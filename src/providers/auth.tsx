@@ -1,12 +1,7 @@
 'use client';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { UsersType } from '@/types/users';
-import { AuthType } from '@/types/auth';
-
-interface AuthContextType extends AuthType {
-  setAuth: (credentials: AuthType) => void;
-  unSetAuth: () => void;
-}
+import { AuthContextType, AuthType } from '@/types/auth';
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
