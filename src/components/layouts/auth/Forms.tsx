@@ -1,6 +1,6 @@
 import React from 'react';
 import { SignInFormWrapper, SignUpFormWrapper } from '@/components/layouts/auth/Wrappers';
-import { AuthForm } from '@/components/ui/auth/Form';
+import { AuthForm } from '@/components/ui/auth/Forms';
 
 export const SignInForm = () => {
   return (

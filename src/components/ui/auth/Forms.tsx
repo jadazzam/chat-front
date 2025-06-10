@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { Button, TextField, Typography } from '@mui/material';
+import { Button, Switch, TextField, Typography } from '@mui/material';
 import Form from 'next/form';
 import { useAuth } from '@/providers/auth';
 import { redirect } from 'next/navigation';
@@ -37,9 +37,7 @@ AuthForm.TextField = function AuthTextField({
 }) {
   return (
     <Box className="mb-5" display="flex" alignItems="center" gap={2}>
-      <Typography sx={{ fontWeight: 'bold', fontSize: '1.2rem', width: '40%' }}>
-        {label} *
-      </Typography>
+      <Typography sx={{ fontWeight: '500', minWidth: '90px' }}>{label} *</Typography>
       <TextField required id={id} name={name} placeholder={placeholder} fullWidth />
     </Box>
   );
@@ -54,19 +52,35 @@ AuthForm.Wrapper = function LoginFormWrapper({
 }) {
   const setAuth = useAuth()?.setAuth;
   return (
+    <Form
+      action={async formData => {
+        const auth: AuthType = await authHandler(formData);
+        if (setAuth && auth.user) {
+          setAuth(auth);
+          redirect('/rooms');
+        }
+      }}
+    >
+      {children}
+    </Form>
+  );
+};
+
+AuthForm.Switch = function AuthFormSwitch({
+  checked,
+  setChecked,
+}: {
+  checked: boolean;
+  setChecked: () => void;
+}) {
+  return (
     <div className="w-full">
-      <Form
-        className="mx-auto flex flex-col justify-center md:w-4/5"
-        action={async formData => {
-          const auth = await authHandler(formData);
-          if (setAuth && auth) {
-            setAuth(auth);
-            redirect('/rooms');
-          }
-        }}
-      >
-        {children}
-      </Form>
+      <Box className="mb-5 w-full" display="flex" alignItems="center" gap={2}>
+        <Typography sx={{ fontWeight: '500' }}>New user ? *</Typography>
+        <Box display="flex" alignItems="center">
+          <Switch checked={checked} onChange={setChecked} />
+        </Box>
+      </Box>
     </div>
   );
 };
