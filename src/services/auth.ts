@@ -42,7 +42,7 @@ export const signUp = async (formData: FormData): Promise<AuthType> => {
     });
     return await response.json();
   } catch (error) {
-    console.error('Error sign in form', error);
+    console.error('Error sign up form', error);
     throw error;
   }
 };
