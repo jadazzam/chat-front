@@ -3,7 +3,7 @@ import React from 'react';
 
 export function RoomsTitle({ title }: { title: string }): React.ReactNode {
   return (
-    <Typography sx={{ textAlign: 'center', mt: 4, fontWeight: 'semibold', fontSize: '3.75rem' }}>
+    <Typography variant="h3" component="h3" sx={{ textAlign: 'center', mt: 4 }}>
       {title}
     </Typography>
   );

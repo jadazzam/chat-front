@@ -6,6 +6,7 @@ import { getRooms } from '@/services/rooms';
 import { AuthContextType } from '@/types/auth';
 import { RoomCardTemplate } from '@/components/ui/rooms/Card';
 import { RoomsTitle } from '@/components/ui/rooms/Title';
+import Typography from '@mui/material/Typography';
 
 export default function RoomsList() {
   const [rooms, setRooms] = useState<RoomsType[]>([]);
@@ -21,9 +22,16 @@ export default function RoomsList() {
     }
   }, [auth?.token]);
 
+  if (!auth?.token || !rooms) {
+    return (
+      <Typography variant="h3" component="h3" sx={{ textAlign: 'center', mt: 4 }}>
+        Loading ...
+      </Typography>
+    );
+  }
   return (
     <>
-      <RoomsTitle title={rooms?.length ? 'Rooms you can join' : 'Loading rooms ...'} />
+      <RoomsTitle title={rooms?.length ? 'Rooms you can join' : 'Loading rooms ....'} />
       {rooms.map((_room: RoomsType, i: number) => {
         return (
           <RoomCardTemplate
@@ -32,7 +40,6 @@ export default function RoomsList() {
             user={auth?.user || null}
             description={
               <>
-                {' '}
                 {'Feel free to join chat &'}
                 <br />
                 {'start sending messages to other members'}
