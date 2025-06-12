@@ -8,9 +8,9 @@ import { UsersType } from '@/types/users';
 import CardActions from '@mui/material/CardActions';
 import Button from '@mui/material/Button';
 
-export const RoomCard = ({ key, children }: { key: string; children: React.ReactNode }) => {
+export const RoomCard = ({ id, children }: { id: string; children: React.ReactNode }) => {
   return (
-    <Box key={key} sx={{ width: 350, marginY: 5, marginX: 'auto' }}>
+    <Box id={id} sx={{ width: 350, marginY: 5, marginX: 'auto' }}>
       <Card variant="outlined">
         <Fragment>
           <CardContent>{children}</CardContent>
@@ -53,7 +53,6 @@ RoomCard.ActionButton = function RoomCardActionButton({ text }: { text: string }
 };
 
 type RoomCardTemplateProps = {
-  key: string;
   room: RoomsType;
   user: UsersType | null;
   description: React.ReactNode;
@@ -61,7 +60,6 @@ type RoomCardTemplateProps = {
 };
 
 export const RoomCardTemplate = ({
-  key,
   room,
   user,
   description,
@@ -69,7 +67,7 @@ export const RoomCardTemplate = ({
 }: RoomCardTemplateProps) => {
   const isOwner = room.owner_id && user?.id && Number(room.owner_id) === Number(user?.id);
   return (
-    <RoomCard key={key}>
+    <RoomCard key={room.id} id={room.id.toString()}>
       {isOwner && <RoomCard.TitleSecondary text="You are owner of this room" />}
       <RoomCard.TitleRoom text={room.name} />
       <RoomCard.Description description={description} />
