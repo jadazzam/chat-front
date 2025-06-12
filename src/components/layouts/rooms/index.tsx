@@ -25,7 +25,7 @@ export default function RoomsList() {
   if (!auth?.token || !rooms) {
     return (
       <Typography variant="h3" component="h3" sx={{ textAlign: 'center', mt: 4 }}>
-        Loading ...
+        Loading...
       </Typography>
     );
   }
