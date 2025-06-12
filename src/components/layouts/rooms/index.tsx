@@ -23,7 +23,7 @@ export default function RoomsList() {
 
   return (
     <>
-      <RoomsTitle title={'Rooms you can join'} />
+      <RoomsTitle title={rooms?.length ? 'Rooms you can join' : 'Loading rooms ...'} />
       {rooms.map((_room: RoomsType, i: number) => {
         return (
           <RoomCardTemplate
