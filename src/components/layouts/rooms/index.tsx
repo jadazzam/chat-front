@@ -22,22 +22,23 @@ export default function RoomsList() {
     }
   }, [auth?.token]);
 
-  if (!auth?.token || !rooms) {
+  if (!auth || !auth.user || (auth?.token && rooms.length === 0)) {
     return (
       <Typography variant="h3" component="h3" sx={{ textAlign: 'center', mt: 4 }}>
-        Loading ...
+        Loading rooms ...
       </Typography>
     );
   }
+  const authUser = auth.user;
   return (
     <>
       <RoomsTitle title={rooms?.length ? 'Rooms you can join' : 'Loading rooms ....'} />
-      {rooms.map((_room: RoomsType, i: number) => {
+      {rooms.map((room: RoomsType) => {
         return (
           <RoomCardTemplate
-            key={i.toString()}
-            room={_room}
-            user={auth?.user || null}
+            key={room.id}
+            room={room}
+            user={authUser}
             description={
               <>
                 {'Feel free to join chat &'}
