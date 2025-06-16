@@ -1,7 +1,7 @@
 'use client';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
-import { createSocket } from '../middlewares/socket';
+import { createSocket } from '@/middlewares/socket';
 import { Socket } from 'socket.io-client';
 import { useAuth } from '@/providers/auth';
 
