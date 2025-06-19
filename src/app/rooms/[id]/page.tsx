@@ -8,6 +8,7 @@ import { createHeaders } from '@/services/headers';
 import { AuthContextType } from '@/types/auth';
 import { SocketResponseProps } from '@/types/socket';
 import { MessageApiType, MessageType } from '@/types/messages';
+import { getRoom } from '@/services/rooms';
 import { RoomsType } from '@/types/rooms';
 
 const Room = () => {
@@ -18,36 +19,17 @@ const Room = () => {
   const userId = auth?.user?.id;
   const [messages, setMessages] = useState<MessageType[]>([]);
 
-  const getRoomMessages = async ({
-    token,
-    roomId,
-  }: {
-    token: string;
-    roomId: string;
-  }): Promise<MessageApiType[]> => {
-    try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL + `/rooms/${roomId}?complete=true`, {
-        method: 'GET',
-        headers: createHeaders(token),
-      });
-      if (!res.ok) {
-        new Error(`Error getRoomMessages status: ${res.status}`);
-      }
-      const response: { data: RoomsType[]; messages: MessageApiType[] } = await res.json();
-      return response.messages;
-    } catch (e) {
-      console.error('Error GET room messages by roomId', e);
-      throw e;
-    }
-  };
-
   useEffect(() => {
     const token = auth?.token;
     if (token) {
       const fetchMessages = async () => {
-        const res: MessageApiType[] = await getRoomMessages({ token, roomId });
-        if (res && res.length) {
-          const messages = res.map((_res: MessageApiType) => {
+        const res: { data: RoomsType[]; messages: MessageApiType[] } = await getRoom({
+          token,
+          roomId,
+          complete: true,
+        });
+        if (res) {
+          const messages = res.messages.map((_res: MessageApiType) => {
             return {
               key: `${_res.content}-${Math.random()}`,
               content: _res.content,
