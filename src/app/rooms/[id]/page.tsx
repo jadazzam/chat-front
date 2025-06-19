@@ -7,7 +7,8 @@ import { Button, TextField, Typography } from '@mui/material';
 import { createHeaders } from '@/services/headers';
 import { AuthContextType } from '@/types/auth';
 import { SocketResponseProps } from '@/types/socket';
-import { MessagesType } from '@/types/messages';
+import { MessageApiType, MessageType } from '@/types/messages';
+import { RoomsType } from '@/types/rooms';
 
 const Room = () => {
   const auth: AuthContextType | null = useAuth();
@@ -15,7 +16,51 @@ const Room = () => {
   const searchParams = useParams<{ id: string }>();
   const roomId = searchParams.id;
   const userId = auth?.user?.id;
-  const [messages, setMessages] = useState<MessagesType[]>([]);
+  const [messages, setMessages] = useState<MessageType[]>([]);
+
+  const getRoomMessages = async ({
+    token,
+    roomId,
+  }: {
+    token: string;
+    roomId: string;
+  }): Promise<MessageApiType[]> => {
+    try {
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL + `/rooms/${roomId}?complete=true`, {
+        method: 'GET',
+        headers: createHeaders(token),
+      });
+      if (!res.ok) {
+        new Error(`Error getRoomMessages status: ${res.status}`);
+      }
+      const response: { data: RoomsType[]; messages: MessageApiType[] } = await res.json();
+      return response.messages;
+    } catch (e) {
+      console.error('Error GET room messages by roomId', e);
+      throw e;
+    }
+  };
+
+  useEffect(() => {
+    const token = auth?.token;
+    if (token) {
+      const fetchMessages = async () => {
+        const res: MessageApiType[] = await getRoomMessages({ token, roomId });
+        if (res && res.length) {
+          const messages = res.map((_res: MessageApiType) => {
+            return {
+              key: `${_res.content}-${Math.random()}`,
+              content: _res.content,
+              userId: _res.user_id,
+            };
+          });
+          setMessages(prevState => [...prevState, ...messages]);
+        }
+      };
+      fetchMessages();
+    }
+  }, [roomId, userId, auth]);
+
   useEffect(() => {
     if (socket && roomId) {
       socket.emit('join room', roomId);
@@ -47,13 +92,12 @@ const Room = () => {
   useEffect(() => {
     if (!socket) return;
 
-    const handleMessage = (data: { content: string; senderId?: string }) => {
+    const handleMessage = (data: { content: string; userId: string }) => {
       console.log('📩 Received a message in room:', data.content, 'from :', data);
-      const senderId = data.senderId;
-      if (senderId !== socket.id) {
+      if (data.userId !== userId) {
         const content = data.content;
         const key = `${content}-${Math.random()}`;
-        setMessages(prevState => [...prevState, { key, content, senderId }]);
+        setMessages(prevState => [...prevState, { key, content, userId: data.userId }]);
       }
     };
 
@@ -62,7 +106,7 @@ const Room = () => {
     return () => {
       socket.off('receive message', handleMessage);
     };
-  }, [socket]);
+  }, [socket, userId]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     try {
@@ -80,7 +124,7 @@ const Room = () => {
           console.log('socket emit message response', response);
         });
         const key = `${content}-${Math.random()}`;
-        setMessages(prevState => [...prevState, { key, content, senderId: socket.id }]);
+        setMessages(prevState => [...prevState, { key, content, userId }]);
       }
     } catch (error) {
       console.error('Error handleSubmit room send message', error);
@@ -91,8 +135,8 @@ const Room = () => {
   return (
     <>
       <div className="flex flex-col items-center justify-center">
-        {messages.map((message: MessagesType) => {
-          const userIsSender = message.senderId === socket?.id;
+        {messages.map((message: MessageType) => {
+          const userIsSender = message.userId === userId;
           return (
             <div className="mx-auto w-1/2" key={message.key}>
               <span className={`${userIsSender ? 'float-right' : 'float-left'} `}>
