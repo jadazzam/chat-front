@@ -6,33 +6,56 @@ import { getRooms } from '@/services/rooms';
 import { AuthContextType } from '@/types/auth';
 import { RoomCardTemplate } from '@/components/ui/rooms/Card';
 import { RoomsTitle } from '@/components/ui/rooms/Title';
-import Typography from '@mui/material/Typography';
+import { INVALID_TOKEN } from '@/middlewares/errors';
+import { redirect } from 'next/navigation';
+import { Typography } from '@mui/material';
 
 export default function RoomsList() {
   const [rooms, setRooms] = useState<RoomsType[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const auth: AuthContextType | null = useAuth();
 
   useEffect(() => {
-    if (auth?.token) {
-      getRooms(auth?.token)
-        .then((res: RoomsType[]) => {
-          if (res) setRooms(res);
-        })
-        .catch(e => console.error('Error /rooms getRooms', e));
+    function fetchRooms() {
+      if (auth?.token) {
+        getRooms(auth?.token)
+          .then((res: RoomsType[]) => {
+            if (res) setRooms(res);
+          })
+          .catch(e => {
+            if (e.message === INVALID_TOKEN) {
+              auth.unSetAuth();
+              redirect('/ ');
+            }
+            console.error('Error /rooms getRooms', e);
+          })
+          .finally(() => setLoading(false));
+      } else setLoading(false);
     }
-  }, [auth?.token]);
 
-  if (!auth || !auth.user || (auth?.token && rooms.length === 0)) {
+    fetchRooms();
+  }, [auth]);
+
+  if (loading) {
     return (
       <Typography variant="h3" component="h3" sx={{ textAlign: 'center', mt: 4 }}>
         Loading rooms ...
       </Typography>
     );
   }
-  const authUser = auth.user;
+
+  if (!auth?.user) {
+    return (
+      <Typography variant="h3" component="h3" sx={{ textAlign: 'center', mt: 4 }}>
+        Please login to access rooms ...
+      </Typography>
+    );
+  }
+
+  const authUser = auth?.user;
   return (
     <>
-      <RoomsTitle title={rooms?.length ? 'Rooms you can join' : 'Loading rooms ....'} />
+      <RoomsTitle title={rooms?.length ? 'Rooms you can join' : 'No available rooms ...'} />
       {rooms.map((room: RoomsType) => {
         return (
           <RoomCardTemplate

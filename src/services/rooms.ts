@@ -4,18 +4,16 @@ import { createHeaders } from '@/services/headers';
 
 export const getRooms = async (token: string): Promise<RoomsType[]> => {
   try {
-    const response = await fetch(process.env.NEXT_PUBLIC_API_URL + '/rooms', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/rooms`, {
       method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+      headers: createHeaders(token),
     });
-    return await response.json();
-  } catch (error) {
-    console.error('Error GET getRooms', error);
-    return [];
+    const res = await response.json();
+    if (!response.ok) throw new Error(res.message || 'Failed to GET rooms');
+    return res;
+  } catch (e) {
+    console.error('Error GET getRooms', e);
+    throw e;
   }
 };
 
