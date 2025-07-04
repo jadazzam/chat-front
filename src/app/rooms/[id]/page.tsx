@@ -50,6 +50,7 @@ const Room = () => {
         console.log(`✅ Successfully joined room ${joinedRoomId}`);
       });
     }
+    const token = auth?.token;
     // const handleBeforeUnload = () => {
     //   // Notify server that user is leaving
     //   // debugger;
@@ -69,6 +70,33 @@ const Room = () => {
     //   window.removeEventListener('beforeunload', handleBeforeUnload);
     //   document.removeEventListener('visibilitychange', handleVisibilityChange);
     // };
+    const handleBeforeUnload = async () => {
+      navigator.sendBeacon(
+        '/api/rooms-members', // your local route
+        new Blob( // wrap JSON in a Blob so the
+          [JSON.stringify({ token, active: false, userId, roomId })],
+          { type: 'application/json' } // ...correct MIME type is set
+        )
+      );
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        console.log('handleVisibilityChange');
+        // navigator.sendBeacon('/api/rooms-members', JSON.stringify({ roomId, userId, token }));
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+
+      // Also fire on cleanup (e.g. navigating away inside SPA)
+      // navigator.sendBeacon('/api/rooms-members', JSON.stringify({ roomId, userId, token }));
+    };
   }, [roomId, userId, socket]);
 
   useEffect(() => {
