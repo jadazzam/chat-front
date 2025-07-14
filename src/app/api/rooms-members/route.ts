@@ -1,11 +1,12 @@
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { createHeaders } from '@/services/headers';
 
 export const dynamic = 'force-static';
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
+  const body = await req.json();
+  const { roomId, userId, active, token } = body;
   try {
-    const { token, active, userId, roomId } = await request.json();
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/rooms-members/${roomId}/${userId}`,
       {
@@ -15,9 +16,9 @@ export async function POST(request: NextRequest) {
       }
     );
     const data = await res.json();
-    return Response.json(data, { status: 200, statusText: 'OK' });
+    return Response.json({ data }, { status: 200, statusText: 'OK' });
   } catch (e) {
-    console.error('Error PUT rooms members by roomId & userId', e);
+    console.error('Error POST rooms members by roomId & userId', e);
     return Response.json({ error: e }, { status: 400, statusText: 'Bad request' });
   }
 }
