@@ -1,5 +1,5 @@
 'use client';
-import React, { FormEvent, useEffect, useState } from 'react';
+import React, { FormEvent, useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@/providers/auth';
 import { useSocket } from '@/providers/socket';
@@ -10,17 +10,44 @@ import { SocketResponseProps } from '@/types/socket';
 import { MessageApiType, MessageType } from '@/types/messages';
 import { getRoom } from '@/services/rooms';
 import { RoomsType } from '@/types/rooms';
+import { postRoomMember } from '@/services/roomsMembers';
 
 const Room = () => {
   const auth: AuthContextType | null = useAuth();
+  const token = auth?.token;
   const socket = useSocket().socket;
   const searchParams = useParams<{ id: string }>();
   const roomId = searchParams.id;
   const userId = auth?.user?.id;
+  const hasEnteredRef = useRef(false);
   const [messages, setMessages] = useState<MessageType[]>([]);
 
+  async function enterRoom({ roomId, userId }: { roomId: string; userId: string }) {
+    debugger;
+    try {
+      return await postRoomMember({ roomId, userId, token: token || '' });
+    } catch (e) {
+      console.error('Error entering room POST', e);
+      throw e;
+    }
+  }
+
   useEffect(() => {
-    const token = auth?.token;
+    const navType = window.performance.getEntriesByType('navigation')[0];
+    const shouldEnter =
+      (navType as PerformanceNavigationTiming).type === 'navigate' &&
+      !hasEnteredRef.current &&
+      userId &&
+      roomId;
+    if (shouldEnter) {
+      hasEnteredRef.current = true;
+      enterRoom({ roomId, userId });
+    } else {
+      console.log("User landed by back_forward' | 'prerender' | 'reload, no need to enter room");
+    }
+  }, [userId, roomId, token]);
+
+  useEffect(() => {
     if (token) {
       const fetchMessages = async () => {
         const res: { data: RoomsType[]; messages: MessageApiType[] } = await getRoom({
@@ -41,7 +68,7 @@ const Room = () => {
       };
       fetchMessages();
     }
-  }, [roomId, userId, auth]);
+  }, [roomId, userId, token]);
 
   useEffect(() => {
     if (socket && roomId) {
@@ -50,11 +77,11 @@ const Room = () => {
         console.log(`✅ Successfully joined room ${joinedRoomId}`);
       });
     }
-    const token = auth?.token;
     const handleBeforeUnload = async () => {
+      debugger;
+      hasEnteredRef.current = false;
       const data = JSON.stringify({ roomId, userId, active: false, token });
       const blob = new Blob([data], { type: 'application/json' });
-
       navigator.sendBeacon('/api/rooms-members', blob);
     };
 
@@ -63,7 +90,7 @@ const Room = () => {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [roomId, userId, socket, auth?.token]);
+  }, [roomId, userId, socket, token]);
 
   useEffect(() => {
     if (!socket) return;
@@ -89,10 +116,9 @@ const Room = () => {
       e.preventDefault();
       const formData = new FormData(e.currentTarget);
       const content = formData.get('content') as string;
-      const token = auth?.token ?? '';
       const message = await fetch(process.env.NEXT_PUBLIC_API_URL + '/messages/', {
         method: 'POST',
-        headers: createHeaders(token),
+        headers: createHeaders(token || ''),
         body: JSON.stringify({ content, room_id: roomId }),
       });
       if (message.ok && socket?.connected) {
