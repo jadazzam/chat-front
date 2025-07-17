@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
       }
     );
     const data = await res.json();
+    console.log('data in POST /api/rooms-members =', data);
     return Response.json({ data }, { status: 200, statusText: 'OK' });
   } catch (e) {
     console.error('Error POST rooms members by roomId & userId', e);

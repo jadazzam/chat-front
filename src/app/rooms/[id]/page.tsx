@@ -77,20 +77,19 @@ const Room = () => {
         console.log(`✅ Successfully joined room ${joinedRoomId}`);
       });
     }
-    const handleBeforeUnload = async () => {
-      debugger;
-      hasEnteredRef.current = false;
-      const data = JSON.stringify({ roomId, userId, active: false, token });
-      const blob = new Blob([data], { type: 'application/json' });
-      navigator.sendBeacon('/api/rooms-members', blob);
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    // debugger;
+    // const handleBeforeUnload = async () => {
+    //   hasEnteredRef.current = false;
+    //   const data = JSON.stringify({ roomId, userId, active: false, token });
+    //   const blob = new Blob([data], { type: 'application/json' });
+    //   navigator.sendBeacon('/api/rooms-members', blob);
+    // };
+    // window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [roomId, userId, socket, token]);
+  }, [roomId, socket]);
 
   useEffect(() => {
     if (!socket) return;
