@@ -17,7 +17,7 @@ export default function RoomsList() {
 
   useEffect(() => {
     function fetchRooms() {
-      if (auth?.token) {
+      if (auth?.user) {
         getRooms()
           .then((res: RoomsType[]) => {
             if (res) setRooms(res);
@@ -44,7 +44,7 @@ export default function RoomsList() {
     );
   }
 
-  if (!auth?.user) {
+  if (!auth || !auth?.user) {
     return (
       <Typography variant="h3" component="h3" sx={{ textAlign: 'center', mt: 4 }}>
         Please login to access rooms ...
@@ -52,7 +52,6 @@ export default function RoomsList() {
     );
   }
 
-  const authUser = auth?.user;
   return (
     <>
       <RoomsTitle title={rooms?.length ? 'Rooms you can join' : 'No available rooms ...'} />
@@ -61,7 +60,7 @@ export default function RoomsList() {
           <RoomCardTemplate
             key={room.id}
             room={room}
-            user={authUser}
+            user={auth.user}
             description={
               <>
                 {'Feel free to join chat &'}

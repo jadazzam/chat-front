@@ -7,7 +7,6 @@ import { RoomsType } from '@/types/rooms';
 import { UsersType } from '@/types/users';
 import CardActions from '@mui/material/CardActions';
 import Button from '@mui/material/Button';
-import { useAuth } from '@/providers/auth';
 import { redirect } from 'next/navigation';
 
 export const RoomCard = ({ id, children }: { id: string; children: React.ReactNode }) => {
@@ -49,16 +48,17 @@ RoomCard.Description = function RoomCardDescription({
 RoomCard.ActionButton = function RoomCardActionButton({
   text,
   roomId,
+  user,
 }: {
   text: string;
   roomId: string;
+  user: UsersType | null;
 }) {
-  const token = useAuth()?.token ?? null;
   return (
     <CardActions>
       <Button
         onClick={async () => {
-          if (token) {
+          if (user) {
             redirect(`/rooms/${roomId}`);
             // TODO : message else() if enter room fails. Display alert?
           }
@@ -73,7 +73,7 @@ RoomCard.ActionButton = function RoomCardActionButton({
 
 type RoomCardTemplateProps = {
   room: RoomsType;
-  user: UsersType;
+  user: UsersType | null;
   description: React.ReactNode;
   buttonText: string;
 };
@@ -90,7 +90,7 @@ export const RoomCardTemplate = ({
       {isOwner && <RoomCard.TitleSecondary text="You are owner of this room" />}
       <RoomCard.TitleRoom text={room.name} />
       <RoomCard.Description description={description} />
-      <RoomCard.ActionButton roomId={room.id} text={buttonText} />
+      <RoomCard.ActionButton roomId={room.id} text={buttonText} user={user} />
     </RoomCard>
   );
 };

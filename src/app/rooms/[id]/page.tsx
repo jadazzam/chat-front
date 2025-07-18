@@ -14,7 +14,6 @@ import { postRoomMember } from '@/services/roomsMembers';
 
 const Room = () => {
   const auth: AuthContextType | null = useAuth();
-  const token = auth?.token;
   const socket = useSocket().socket;
   const searchParams = useParams<{ id: string }>();
   const roomId = searchParams.id;
@@ -25,7 +24,7 @@ const Room = () => {
   async function enterRoom({ roomId, userId }: { roomId: string; userId: string }) {
     debugger;
     try {
-      return await postRoomMember({ roomId, userId, token: token || '' });
+      return await postRoomMember({ roomId, userId });
     } catch (e) {
       console.error('Error entering room POST', e);
       throw e;
@@ -45,30 +44,27 @@ const Room = () => {
     } else {
       console.log("User landed by back_forward' | 'prerender' | 'reload, no need to enter room");
     }
-  }, [userId, roomId, token]);
+  }, [userId, roomId]);
 
   useEffect(() => {
-    if (token) {
-      const fetchMessages = async () => {
-        const res: { data: RoomsType[]; messages: MessageApiType[] } = await getRoom({
-          token,
-          roomId,
-          complete: true,
+    const fetchMessages = async () => {
+      const res: { data: RoomsType[]; messages: MessageApiType[] } = await getRoom({
+        roomId,
+        complete: true,
+      });
+      if (res) {
+        const messages = res.messages.map((_res: MessageApiType) => {
+          return {
+            key: `${_res.content}-${Math.random()}`,
+            content: _res.content,
+            userId: _res.user_id,
+          };
         });
-        if (res) {
-          const messages = res.messages.map((_res: MessageApiType) => {
-            return {
-              key: `${_res.content}-${Math.random()}`,
-              content: _res.content,
-              userId: _res.user_id,
-            };
-          });
-          setMessages(prevState => [...prevState, ...messages]);
-        }
-      };
-      fetchMessages();
-    }
-  }, [roomId, userId, token]);
+        setMessages(prevState => [...prevState, ...messages]);
+      }
+    };
+    fetchMessages();
+  }, [roomId, userId]);
 
   useEffect(() => {
     if (socket && roomId) {
@@ -77,18 +73,6 @@ const Room = () => {
         console.log(`✅ Successfully joined room ${joinedRoomId}`);
       });
     }
-    // debugger;
-    // const handleBeforeUnload = async () => {
-    //   hasEnteredRef.current = false;
-    //   const data = JSON.stringify({ roomId, userId, active: false, token });
-    //   const blob = new Blob([data], { type: 'application/json' });
-    //   navigator.sendBeacon('/api/rooms-members', blob);
-    // };
-    // window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      // window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
   }, [roomId, socket]);
 
   useEffect(() => {
@@ -117,7 +101,7 @@ const Room = () => {
       const content = formData.get('content') as string;
       const message = await fetch(process.env.NEXT_PUBLIC_API_URL + '/messages/', {
         method: 'POST',
-        headers: createHeaders(token || ''),
+        headers: createHeaders(),
         body: JSON.stringify({ content, room_id: roomId }),
       });
       if (message.ok && socket?.connected) {

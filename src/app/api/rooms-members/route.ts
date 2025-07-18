@@ -5,13 +5,13 @@ export const dynamic = 'force-static';
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { roomId, userId, active, token } = body;
+  const { roomId, userId, active } = body;
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/rooms-members/${roomId}/${userId}`,
       {
         method: 'PUT',
-        headers: createHeaders(token ?? ''),
+        headers: createHeaders(),
         body: JSON.stringify({ roomId, userId, active }),
       }
     );
