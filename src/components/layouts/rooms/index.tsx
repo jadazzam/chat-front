@@ -18,13 +18,13 @@ export default function RoomsList() {
   useEffect(() => {
     function fetchRooms() {
       if (auth?.token) {
-        getRooms(auth?.token)
+        getRooms()
           .then((res: RoomsType[]) => {
             if (res) setRooms(res);
           })
           .catch(e => {
             if (e.message === INVALID_TOKEN) {
-              auth.unSetAuth();
+              auth?.unSetAuth();
               redirect('/ ');
             }
             console.error('Error /rooms getRooms', e);

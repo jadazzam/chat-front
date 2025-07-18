@@ -2,11 +2,12 @@ import { RoomsType } from '@/types/rooms';
 import { MessageApiType } from '@/types/messages';
 import { createHeaders } from '@/services/headers';
 
-export const getRooms = async (token: string): Promise<RoomsType[]> => {
+export const getRooms = async (): Promise<RoomsType[]> => {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/rooms`, {
       method: 'GET',
-      headers: createHeaders(token),
+      headers: createHeaders(),
+      credentials: 'include',
     });
     const res = await response.json();
     if (!response.ok) throw new Error(res.message || 'Failed to GET rooms');
@@ -18,11 +19,9 @@ export const getRooms = async (token: string): Promise<RoomsType[]> => {
 };
 
 export const getRoom = async ({
-  token,
   roomId,
   complete = false,
 }: {
-  token: string | null;
   roomId: string;
   complete: boolean;
 }): Promise<{ data: RoomsType[]; messages: MessageApiType[] }> => {
@@ -31,7 +30,8 @@ export const getRoom = async ({
       process.env.NEXT_PUBLIC_API_URL + `/rooms/${roomId}?complete=${complete}`,
       {
         method: 'GET',
-        headers: createHeaders(token || undefined),
+        credentials: 'include',
+        headers: createHeaders(),
       }
     );
     if (!res.ok) {
