@@ -3,7 +3,6 @@ import { AuthType } from '@/types/auth';
 export const signIn = async (formData: FormData): Promise<AuthType> => {
   const email = formData.get('email');
   const password = formData.get('password');
-
   try {
     const response = await fetch(process.env.NEXT_PUBLIC_API_URL + '/signin', {
       method: 'POST',
@@ -11,6 +10,7 @@ export const signIn = async (formData: FormData): Promise<AuthType> => {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
+      credentials: 'include',
       body: JSON.stringify({
         email: email,
         password: password,
@@ -34,6 +34,7 @@ export const signUp = async (formData: FormData): Promise<AuthType> => {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
+      credentials: 'include',
       body: JSON.stringify({
         email,
         password,

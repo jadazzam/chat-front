@@ -1,5 +1,5 @@
 export interface RoomsType {
-    id: string;
-    name: string;
-    owner_id: string
+  id: string;
+  name: string;
+  owner_id: string;
 }
