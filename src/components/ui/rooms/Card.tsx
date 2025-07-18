@@ -7,6 +7,8 @@ import { RoomsType } from '@/types/rooms';
 import { UsersType } from '@/types/users';
 import CardActions from '@mui/material/CardActions';
 import Button from '@mui/material/Button';
+import { useAuth } from '@/providers/auth';
+import { redirect } from 'next/navigation';
 
 export const RoomCard = ({ id, children }: { id: string; children: React.ReactNode }) => {
   return (
@@ -44,17 +46,34 @@ RoomCard.Description = function RoomCardDescription({
   return <Typography variant="body2">{description}</Typography>;
 };
 
-RoomCard.ActionButton = function RoomCardActionButton({ text }: { text: string }) {
+RoomCard.ActionButton = function RoomCardActionButton({
+  text,
+  roomId,
+}: {
+  text: string;
+  roomId: string;
+}) {
+  const token = useAuth()?.token ?? null;
   return (
     <CardActions>
-      <Button size="small">{text}</Button>
+      <Button
+        onClick={async () => {
+          if (token) {
+            redirect(`/rooms/${roomId}`);
+            // TODO : message else() if enter room fails. Display alert?
+          }
+        }}
+        size="small"
+      >
+        {text}
+      </Button>
     </CardActions>
   );
 };
 
 type RoomCardTemplateProps = {
   room: RoomsType;
-  user: UsersType | null;
+  user: UsersType;
   description: React.ReactNode;
   buttonText: string;
 };
@@ -71,7 +90,7 @@ export const RoomCardTemplate = ({
       {isOwner && <RoomCard.TitleSecondary text="You are owner of this room" />}
       <RoomCard.TitleRoom text={room.name} />
       <RoomCard.Description description={description} />
-      <RoomCard.ActionButton text={buttonText} />
+      <RoomCard.ActionButton roomId={room.id} text={buttonText} />
     </RoomCard>
   );
 };
