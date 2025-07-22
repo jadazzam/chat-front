@@ -1,7 +1,10 @@
+import { UsersType } from '@/types/users';
+
 export type MessageType = {
   key: string;
   content: string;
   userId: string | undefined;
+  user?: UsersType;
 };
 
 export type MessageApiType = {
@@ -10,4 +13,5 @@ export type MessageApiType = {
   created_at: Date;
   user_id: string;
   room_id: string;
+  user?: UsersType;
 };
