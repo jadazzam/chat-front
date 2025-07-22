@@ -1,7 +1,9 @@
+import { UsersType } from '@/types/users';
 export type MessageType = {
   key: string;
   content: string;
   userId: string | undefined;
+  user?: UsersType;
 };
 
 export type MessageApiType = {
