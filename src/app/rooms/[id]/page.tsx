@@ -4,13 +4,13 @@ import { useParams } from 'next/navigation';
 import { useAuth } from '@/providers/auth';
 import { useSocket } from '@/providers/socket';
 import { Avatar, Button, TextField, Typography } from '@mui/material';
-import { createHeaders } from '@/services/headers';
 import { AuthContextType } from '@/types/auth';
 import { SocketResponseProps } from '@/types/socket';
 import { MessageApiType, MessageType } from '@/types/messages';
 import { getRoom } from '@/services/rooms';
 import { RoomsType } from '@/types/rooms';
 import { postRoomMember } from '@/services/roomsMembers';
+import { postMessage } from '@/services/messages';
 import { Box } from '@mui/system';
 import { getInitiales, stringAvatar } from '@/middlewares/helpers';
 
@@ -101,13 +101,8 @@ const Room = () => {
       e.preventDefault();
       const formData = new FormData(e.currentTarget);
       const content = formData.get('content') as string;
-      const message = await fetch(process.env.NEXT_PUBLIC_API_URL + '/messages/', {
-        method: 'POST',
-        headers: createHeaders(),
-        body: JSON.stringify({ content, room_id: roomId }),
-        credentials: 'include',
-      });
-      if (message.ok && socket?.connected) {
+      const message = await postMessage({ roomId, content });
+      if (message?.id && socket?.connected) {
         socket.emit('send message', { roomId, content }, (response: SocketResponseProps) => {
           console.log('socket emit message response', response);
         });

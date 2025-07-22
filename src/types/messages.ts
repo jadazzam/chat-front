@@ -1,4 +1,5 @@
 import { UsersType } from '@/types/users';
+
 export type MessageType = {
   key: string;
   content: string;
