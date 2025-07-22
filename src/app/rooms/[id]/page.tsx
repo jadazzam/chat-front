@@ -6,13 +6,14 @@ import { useSocket } from '@/providers/socket';
 import { Avatar, Button, TextField, Typography } from '@mui/material';
 import { AuthContextType } from '@/types/auth';
 import { SocketResponseProps } from '@/types/socket';
-import { MessageApiType, MessageType } from '@/types/messages';
+import { MessageType } from '@/types/messages';
 import { getRoom } from '@/services/rooms';
 import { RoomsType } from '@/types/rooms';
 import { postRoomMember } from '@/services/roomsMembers';
 import { postMessage } from '@/services/messages';
 import { Box } from '@mui/system';
 import { getInitiales, stringAvatar } from '@/middlewares/helpers';
+import SendIcon from '@mui/icons-material/Send';
 
 const Room = () => {
   const auth: AuthContextType | null = useAuth();
@@ -21,6 +22,7 @@ const Room = () => {
   const roomId = searchParams.id;
   const userId = auth?.user?.id;
   const hasEnteredRef = useRef(false);
+  const [roomName, setRoomName] = useState<string>('');
   const [messages, setMessages] = useState<MessageType[]>([]);
 
   async function enterRoom({ roomId, userId }: { roomId: string; userId: string }) {
@@ -33,68 +35,77 @@ const Room = () => {
   }
 
   useEffect(() => {
-    const navType = window.performance.getEntriesByType('navigation')[0];
-    const shouldEnter =
-      (navType as PerformanceNavigationTiming).type === 'navigate' &&
-      !hasEnteredRef.current &&
-      userId &&
-      roomId;
-    if (shouldEnter) {
+    const navEntry = window.performance.getEntriesByType(
+      'navigation'
+    )[0] as PerformanceNavigationTiming;
+
+    const isFirstEntry = navEntry.type === 'navigate' && !hasEnteredRef.current && userId && roomId;
+
+    if (isFirstEntry) {
       hasEnteredRef.current = true;
       enterRoom({ roomId, userId });
     } else {
-      console.log("User landed by back_forward' | 'prerender' | 'reload, no need to enter room");
+      console.log(
+        "User landed via 'back_forward' | 'prerender' | 'reload' — no need to enter room"
+      );
     }
   }, [userId, roomId]);
 
   useEffect(() => {
     const fetchMessages = async () => {
-      const res: { data: RoomsType[]; messages: MessageApiType[] } = await getRoom({
-        roomId,
-        complete: true,
-      });
-      if (res) {
-        const messages = res.messages.map((_res: MessageApiType) => {
-          return {
-            key: `${_res.content}-${Math.random()}`,
-            content: _res.content,
-            userId: _res.user_id,
-            user: _res.user,
-          };
-        });
-        setMessages(prevState => [...prevState, ...messages]);
+      try {
+        const res = await getRoom({ roomId, complete: true });
+        if (res?.data[0]?.name) {
+          setRoomName(res.data[0].name);
+        }
+        if (res?.messages?.length) {
+          const messages = res.messages.map(msg => ({
+            key: `${msg.content}-${Math.random()}`,
+            content: msg.content,
+            userId: msg.user_id,
+            user: msg.user,
+          }));
+          setMessages(prev => [...prev, ...messages]);
+        }
+      } catch (e) {
+        console.error('❌ Failed to fetch messages:', e);
       }
     };
+
     fetchMessages();
   }, [roomId, userId]);
 
   useEffect(() => {
-    if (socket && roomId) {
-      socket.emit('join room', roomId);
-      socket.on('joined room', joinedRoomId => {
-        console.log(`✅ Successfully joined room ${joinedRoomId}`);
-      });
-    }
-  }, [roomId, socket]);
+    if (!socket || !roomId) return;
 
-  useEffect(() => {
-    if (!socket) return;
+    socket.emit('join room', roomId);
+
+    const handleJoined = (joinedRoomId: string) => {
+      console.log(`✅ Successfully joined room ${joinedRoomId}`);
+    };
 
     const handleMessage = (data: { content: string; userId: string }) => {
-      console.log('📩 Received a message in room:', data.content, 'from :', data);
+      console.log('📩 Received message:', data.content, 'from:', data);
       if (data.userId !== userId) {
-        const content = data.content;
-        const key = `${content}-${Math.random()}`;
-        setMessages(prevState => [...prevState, { key, content, userId: data.userId }]);
+        setMessages(prev => [
+          ...prev,
+          {
+            key: `${data.content}-${Math.random()}`,
+            content: data.content,
+            userId: data.userId,
+          },
+        ]);
       }
     };
 
+    socket.on('joined room', handleJoined);
     socket.on('receive message', handleMessage);
 
     return () => {
+      socket.off('joined room', handleJoined);
       socket.off('receive message', handleMessage);
     };
-  }, [socket, userId]);
+  }, [socket, roomId, userId]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     try {
@@ -117,6 +128,7 @@ const Room = () => {
 
   return (
     <>
+      <h2 style={{ textAlign: 'center', marginTop: '20px' }}>Welcome to {roomName}</h2>
       <Box
         component="section"
         sx={{
@@ -125,6 +137,7 @@ const Room = () => {
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
+          marginX: '20%',
         }}
       >
         {messages.map((message: MessageType) => {
@@ -135,10 +148,9 @@ const Room = () => {
                 boxShadow: '0 0 20px 0 rgba(0, 0, 0, 0.1)',
                 borderRadius: 2,
                 display: 'flex',
-                marginX: 'auto',
                 marginY: 1,
-                width: '50%',
                 padding: 2,
+                width: '100%',
               }}
               key={message.key}
             >
@@ -156,17 +168,35 @@ const Room = () => {
             </Box>
           );
         })}
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'row-reverse',
+            width: '100%',
+            marginTop: 5,
+            alignItems: 'center',
+          }}
+        >
+          <form
+            style={{
+              display: 'flex',
+              alignItems: 'center', // Vertically center
+              gap: '8px', // Optional spacing between elements
+            }}
+            onSubmit={handleSubmit}
+          >
+            <TextField
+              sx={{ padding: '8px 0', width: '25rem' }}
+              name="content"
+              id="content"
+              label="Type your message here ..."
+              variant="standard"
+              required
+            />
+            <Button type="submit" endIcon={<SendIcon />}></Button>
+          </form>
+        </Box>
       </Box>
-      <form onSubmit={handleSubmit}>
-        <TextField
-          name="content"
-          id="content"
-          label="Type your message"
-          variant="standard"
-          required
-        />
-        <Button type="submit">Submit here</Button>
-      </form>
     </>
   );
 };

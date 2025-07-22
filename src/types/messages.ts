@@ -13,4 +13,5 @@ export type MessageApiType = {
   created_at: Date;
   user_id: string;
   room_id: string;
+  user?: UsersType;
 };
