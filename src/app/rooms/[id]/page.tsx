@@ -3,29 +3,31 @@ import React, { FormEvent, useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@/providers/auth';
 import { useSocket } from '@/providers/socket';
-import { Button, TextField, Typography } from '@mui/material';
-import { createHeaders } from '@/services/headers';
+import { Avatar, Button, TextField, Typography } from '@mui/material';
 import { AuthContextType } from '@/types/auth';
 import { SocketResponseProps } from '@/types/socket';
-import { MessageApiType, MessageType } from '@/types/messages';
+import { MessageType } from '@/types/messages';
 import { getRoom } from '@/services/rooms';
 import { RoomsType } from '@/types/rooms';
 import { postRoomMember } from '@/services/roomsMembers';
+import { postMessage } from '@/services/messages';
+import { Box } from '@mui/system';
+import { getInitiales, stringAvatar } from '@/middlewares/helpers';
+import SendIcon from '@mui/icons-material/Send';
 
 const Room = () => {
   const auth: AuthContextType | null = useAuth();
-  const token = auth?.token;
   const socket = useSocket().socket;
   const searchParams = useParams<{ id: string }>();
   const roomId = searchParams.id;
   const userId = auth?.user?.id;
   const hasEnteredRef = useRef(false);
+  const [roomName, setRoomName] = useState<string>('');
   const [messages, setMessages] = useState<MessageType[]>([]);
 
   async function enterRoom({ roomId, userId }: { roomId: string; userId: string }) {
-    debugger;
     try {
-      return await postRoomMember({ roomId, userId, token: token || '' });
+      return await postRoomMember({ roomId, userId });
     } catch (e) {
       console.error('Error entering room POST', e);
       throw e;
@@ -33,94 +35,85 @@ const Room = () => {
   }
 
   useEffect(() => {
-    const navType = window.performance.getEntriesByType('navigation')[0];
-    const shouldEnter =
-      (navType as PerformanceNavigationTiming).type === 'navigate' &&
-      !hasEnteredRef.current &&
-      userId &&
-      roomId;
-    if (shouldEnter) {
+    const navEntry = window.performance.getEntriesByType(
+      'navigation'
+    )[0] as PerformanceNavigationTiming;
+
+    const isFirstEntry = navEntry.type === 'navigate' && !hasEnteredRef.current && userId && roomId;
+
+    if (isFirstEntry) {
       hasEnteredRef.current = true;
       enterRoom({ roomId, userId });
     } else {
-      console.log("User landed by back_forward' | 'prerender' | 'reload, no need to enter room");
+      console.log(
+        "User landed via 'back_forward' | 'prerender' | 'reload' — no need to enter room"
+      );
     }
-  }, [userId, roomId, token]);
+  }, [userId, roomId]);
 
   useEffect(() => {
-    if (token) {
-      const fetchMessages = async () => {
-        const res: { data: RoomsType[]; messages: MessageApiType[] } = await getRoom({
-          token,
-          roomId,
-          complete: true,
-        });
-        if (res) {
-          const messages = res.messages.map((_res: MessageApiType) => {
-            return {
-              key: `${_res.content}-${Math.random()}`,
-              content: _res.content,
-              userId: _res.user_id,
-            };
-          });
-          setMessages(prevState => [...prevState, ...messages]);
+    const fetchMessages = async () => {
+      try {
+        const res = await getRoom({ roomId, complete: true });
+        if (res?.data[0]?.name) {
+          setRoomName(res.data[0].name);
         }
-      };
-      fetchMessages();
-    }
-  }, [roomId, userId, token]);
-
-  useEffect(() => {
-    if (socket && roomId) {
-      socket.emit('join room', roomId);
-      socket.on('joined room', joinedRoomId => {
-        console.log(`✅ Successfully joined room ${joinedRoomId}`);
-      });
-    }
-    // debugger;
-    // const handleBeforeUnload = async () => {
-    //   hasEnteredRef.current = false;
-    //   const data = JSON.stringify({ roomId, userId, active: false, token });
-    //   const blob = new Blob([data], { type: 'application/json' });
-    //   navigator.sendBeacon('/api/rooms-members', blob);
-    // };
-    // window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      // window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [roomId, socket]);
-
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleMessage = (data: { content: string; userId: string }) => {
-      console.log('📩 Received a message in room:', data.content, 'from :', data);
-      if (data.userId !== userId) {
-        const content = data.content;
-        const key = `${content}-${Math.random()}`;
-        setMessages(prevState => [...prevState, { key, content, userId: data.userId }]);
+        if (res?.messages?.length) {
+          const messages = res.messages.map(msg => ({
+            key: `${msg.content}-${Math.random()}`,
+            content: msg.content,
+            userId: msg.user_id,
+            user: msg.user,
+          }));
+          setMessages(prev => [...prev, ...messages]);
+        }
+      } catch (e) {
+        console.error('❌ Failed to fetch messages:', e);
       }
     };
 
+    fetchMessages();
+  }, [roomId, userId]);
+
+  useEffect(() => {
+    if (!socket || !roomId) return;
+
+    socket.emit('join room', roomId);
+
+    const handleJoined = (joinedRoomId: string) => {
+      console.log(`✅ Successfully joined room ${joinedRoomId}`);
+    };
+
+    const handleMessage = (data: { content: string; userId: string }) => {
+      console.log('📩 Received message:', data.content, 'from:', data);
+      if (data.userId !== userId) {
+        setMessages(prev => [
+          ...prev,
+          {
+            key: `${data.content}-${Math.random()}`,
+            content: data.content,
+            userId: data.userId,
+          },
+        ]);
+      }
+    };
+
+    socket.on('joined room', handleJoined);
     socket.on('receive message', handleMessage);
 
     return () => {
+      socket.off('joined room', handleJoined);
       socket.off('receive message', handleMessage);
     };
-  }, [socket, userId]);
+  }, [socket, roomId, userId]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     try {
       e.preventDefault();
       const formData = new FormData(e.currentTarget);
       const content = formData.get('content') as string;
-      const message = await fetch(process.env.NEXT_PUBLIC_API_URL + '/messages/', {
-        method: 'POST',
-        headers: createHeaders(token || ''),
-        body: JSON.stringify({ content, room_id: roomId }),
-      });
-      if (message.ok && socket?.connected) {
+      const message = await postMessage({ roomId, content });
+      if (message?.id && socket?.connected) {
         socket.emit('send message', { roomId, content }, (response: SocketResponseProps) => {
           console.log('socket emit message response', response);
         });
@@ -135,30 +128,75 @@ const Room = () => {
 
   return (
     <>
-      <div className="flex flex-col items-center justify-center">
+      <h2 style={{ textAlign: 'center', marginTop: '20px' }}>Welcome to {roomName}</h2>
+      <Box
+        component="section"
+        sx={{
+          p: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginX: '20%',
+        }}
+      >
         {messages.map((message: MessageType) => {
           const userIsSender = message.userId === userId;
           return (
-            <div className="mx-auto w-1/2" key={message.key}>
-              <span className={`${userIsSender ? 'float-right' : 'float-left'} `}>
-                <Typography variant="body2" gutterBottom>
-                  {message.content}
-                </Typography>
-              </span>
-            </div>
+            <Box
+              sx={{
+                boxShadow: '0 0 20px 0 rgba(0, 0, 0, 0.1)',
+                borderRadius: 2,
+                display: 'flex',
+                marginY: 1,
+                padding: 2,
+                width: '100%',
+              }}
+              key={message.key}
+            >
+              <Box sx={{ marginLeft: `${userIsSender ? 'auto' : 'left'}`, display: 'flex' }}>
+                {!userIsSender && (
+                  <Avatar {...stringAvatar(getInitiales(message?.user?.name ?? 'N A'))} />
+                )}
+                <Box sx={{ marginLeft: 1, display: 'flex', alignItems: 'center', flex: 1 }}>
+                  <Typography variant="body2" gutterBottom></Typography>
+                  <Typography variant="body2" gutterBottom>
+                    {message.content}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
           );
         })}
-      </div>
-      <form onSubmit={handleSubmit}>
-        <TextField
-          name="content"
-          id="content"
-          label="Type your message"
-          variant="standard"
-          required
-        />
-        <Button type="submit">Submit here</Button>
-      </form>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'row-reverse',
+            width: '100%',
+            marginTop: 5,
+            alignItems: 'center',
+          }}
+        >
+          <form
+            style={{
+              display: 'flex',
+              alignItems: 'center', // Vertically center
+              gap: '8px', // Optional spacing between elements
+            }}
+            onSubmit={handleSubmit}
+          >
+            <TextField
+              sx={{ padding: '8px 0', width: '25rem' }}
+              name="content"
+              id="content"
+              label="Type your message here ..."
+              variant="standard"
+              required
+            />
+            <Button type="submit" endIcon={<SendIcon />}></Button>
+          </form>
+        </Box>
+      </Box>
     </>
   );
 };
