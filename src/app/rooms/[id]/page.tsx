@@ -8,7 +8,6 @@ import { AuthContextType } from '@/types/auth';
 import { SocketResponseProps } from '@/types/socket';
 import { MessageType } from '@/types/messages';
 import { getRoom } from '@/services/rooms';
-import { RoomsType } from '@/types/rooms';
 import { postRoomMember } from '@/services/roomsMembers';
 import { postMessage } from '@/services/messages';
 import { Box } from '@mui/system';
@@ -118,7 +117,7 @@ const Room = () => {
           console.log('socket emit message response', response);
         });
         const key = `${content}-${Math.random()}`;
-        setMessages(prevState => [...prevState, { key, content, userId }]);
+        setMessages(prevState => [...prevState, { key, content, userId, user: auth?.user }]);
       }
     } catch (error) {
       console.error('Error handleSubmit room send message', error);

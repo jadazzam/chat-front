@@ -25,14 +25,11 @@ export function SocketProvider({ children }: SocketProviderProps) {
   const [isConnected, setIsConnected] = useState(false);
   const [transport, setTransport] = useState('N/A');
   const [socket, setSocket] = useState<Socket | null>(null);
-  const token = useAuth()?.token;
-
   useEffect(() => {
-    if (!token) {
-      console.log('Socket token required');
-      return;
+    const socket = createSocket();
+    if (!socket) {
+      console.error('Socket not created');
     }
-    const socket = createSocket(token);
     if (!socket.connected) {
       socket.connect();
     }
@@ -68,7 +65,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
         console.log('Socket disconnected manually');
       }
     };
-  }, [token]);
+  }, []);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected, transport }}>
