@@ -3,18 +3,14 @@ import React, { FormEvent, useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@/providers/auth';
 import { useSocket } from '@/providers/socket';
-import { Avatar, Button, TextField, Typography } from '@mui/material';
 import { AuthContextType } from '@/types/auth';
 import { SocketResponseProps } from '@/types/socket';
 import { MessageType } from '@/types/messages';
 import { getRoom } from '@/services/rooms';
 import { postRoomMember } from '@/services/roomsMembers';
 import { postMessage } from '@/services/messages';
-import { Box } from '@mui/system';
-import { getInitiales, stringAvatar } from '@/middlewares/helpers';
-import SendIcon from '@mui/icons-material/Send';
-import { RoomsTitle } from '@/components/ui/rooms/Title';
 import { CircularProgress } from '@mui/material';
+import { RoomLayout } from '@/components/layouts/rooms/id';
 
 const Room = () => {
   const auth: AuthContextType | null = useAuth();
@@ -136,7 +132,6 @@ const Room = () => {
   };
 
   if (isLoading) {
-    console.log('isLoading', isLoading);
     return (
       <div
         style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}
@@ -147,98 +142,13 @@ const Room = () => {
   }
 
   return (
-    <>
-      <RoomsTitle title={`Welcome to ${roomName}`} />
-      <Box
-        component="section"
-        sx={{
-          p: 10,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          marginX: '20%',
-        }}
-      >
-        {messages.map((message: MessageType) => {
-          const userIsSender = message.userId === userId;
-          return (
-            <Box
-              sx={{
-                alignSelf: userIsSender ? 'flex-end' : 'flex-start',
-                backgroundColor: userIsSender ? '#3b82f6' : '#f3f4f6', // blue-500 or gray-100
-                color: userIsSender ? '#ffffff' : '#1f2937', // white or gray-800
-                px: 2,
-                py: 1.5,
-                borderRadius: 3,
-                maxWidth: '70%',
-                mb: 1,
-                fontSize: '1rem',
-                boxShadow: 1,
-              }}
-              key={message.key}
-            >
-              <Box sx={{ marginLeft: `${userIsSender ? 'auto' : 'left'}`, display: 'flex' }}>
-                {!userIsSender && (
-                  <Avatar {...stringAvatar(getInitiales(message?.user?.name ?? 'N A'))} />
-                )}
-                <Box sx={{ marginLeft: 1, display: 'flex', alignItems: 'center', flex: 1 }}>
-                  <Typography variant="body2" gutterBottom></Typography>
-                  <Typography variant="body2" gutterBottom>
-                    {message.content}
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          );
-        })}
-        <Box
-          sx={{
-            width: '100%',
-            backgroundColor: '#f3f4f6',
-            borderRadius: '9999px',
-            padding: '10px 16px',
-            fontSize: '1rem',
-            color: '#1f2937',
-            border: '1px solid #e5e7eb',
-            outline: 'none',
-            marginTop: '5rem',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-            '&::placeholder': {
-              color: '#9ca3af',
-              opacity: 1,
-            },
-            '&:focus': {
-              border: '1px solid #3b82f6',
-              boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.3)',
-            },
-          }}
-        >
-          <form
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              width: '100%',
-            }}
-            onSubmit={handleSubmit}
-          >
-            <TextField
-              inputRef={inputRef}
-              sx={{ padding: '8px 0', width: '100%' }}
-              name="content"
-              id="content"
-              aria-placeholder=""
-              placeholder="Type your message here ..."
-              variant="standard"
-              defaultValue=""
-              required
-            />
-            <Button type="submit" endIcon={<SendIcon />}></Button>
-          </form>
-        </Box>
-      </Box>
-    </>
+    <RoomLayout
+      title={roomName}
+      messages={messages}
+      userId={userId}
+      handleSubmit={handleSubmit}
+      inputRef={inputRef}
+    />
   );
 };
 
