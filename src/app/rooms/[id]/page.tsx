@@ -33,6 +33,28 @@ const Room = () => {
     }
   }
 
+  async function fetchMessages({ roomId }: { roomId: string }) {
+    try {
+      const res = await getRoom({ roomId, complete: true });
+      if (res?.data[0]?.name) {
+        setRoomName(res.data[0].name);
+      }
+      if (res?.messages?.length) {
+        const messages = res.messages.map(msg => ({
+          key: `${msg.content}-${Math.random()}`,
+          content: msg.content,
+          userId: msg.user_id,
+          user: msg.user,
+        }));
+        setMessages(prev => [...prev, ...messages]);
+      }
+    } catch (e) {
+      console.error('❌ Failed to fetch messages:', e);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   useEffect(() => {
     const navEntry = window.performance.getEntriesByType(
       'navigation'
@@ -51,30 +73,8 @@ const Room = () => {
   }, [userId, roomId]);
 
   useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const res = await getRoom({ roomId, complete: true });
-        if (res?.data[0]?.name) {
-          setRoomName(res.data[0].name);
-        }
-        if (res?.messages?.length) {
-          const messages = res.messages.map(msg => ({
-            key: `${msg.content}-${Math.random()}`,
-            content: msg.content,
-            userId: msg.user_id,
-            user: msg.user,
-          }));
-          setMessages(prev => [...prev, ...messages]);
-        }
-      } catch (e) {
-        console.error('❌ Failed to fetch messages:', e);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchMessages();
-  }, [roomId, userId]);
+    if (roomId) fetchMessages({ roomId });
+  }, [roomId]);
 
   useEffect(() => {
     if (!socket || !roomId) return;

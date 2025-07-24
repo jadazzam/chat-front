@@ -21,15 +21,19 @@ export const RoomLayout = ({
     <>
       <RoomLayout.Title title={title} />
       <RoomLayout.MessagesBox>
-        {messages.map((message: MessageType) => {
-          return (
-            <RoomLayout.Message
-              key={message.key}
-              userIsSender={message.userId === userId}
-              message={message}
-            />
-          );
-        })}
+        {messages.length ? (
+          messages.map((message: MessageType) => {
+            return (
+              <RoomLayout.Message
+                key={message.key}
+                userIsSender={message.userId === userId}
+                message={message}
+              />
+            );
+          })
+        ) : (
+          <RoomLayout.NoMessage />
+        )}
         <RoomLayout.MessageForm handleSubmit={handleSubmit} inputRef={inputRef} />
       </RoomLayout.MessagesBox>
     </>
@@ -51,7 +55,7 @@ RoomLayout.Title = function Title({ title }: { title: string }) {
         fontFamily: "'Roboto', 'Helvetica', 'Arial', sans-serif",
       }}
     >
-      {title}
+      Welcome to {title}
     </Typography>
   );
 };
@@ -74,14 +78,37 @@ RoomLayout.MessagesBox = function MessagesBox({ children }: { children: React.Re
   );
 };
 
+RoomLayout.NoMessage = function NoMessage() {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        color: '#4b5563',
+        fontSize: '1.1rem',
+        fontWeight: 500,
+        letterSpacing: '0.01em',
+        textAlign: 'center',
+        px: 2,
+      }}
+    >
+      No messages yet...
+      <Typography variant="body2" sx={{ mt: 1, color: '#6b7280', fontSize: '0.9rem' }}>
+        Start the conversation by sending a message.
+      </Typography>
+    </Box>
+  );
+};
+
 RoomLayout.Message = function Message({
   userIsSender,
   message,
-  key,
 }: {
   userIsSender: boolean;
   message: MessageType;
-  key: string;
 }) {
   return (
     <Box
@@ -97,7 +124,6 @@ RoomLayout.Message = function Message({
         fontSize: '1rem',
         boxShadow: 1,
       }}
-      key={key}
     >
       <Box sx={{ marginLeft: `${userIsSender ? 'auto' : 'left'}`, display: 'flex' }}>
         {!userIsSender && <Avatar {...stringAvatar(getInitiales(message?.user?.name ?? 'N A'))} />}
