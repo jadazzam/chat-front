@@ -13,6 +13,8 @@ import { postMessage } from '@/services/messages';
 import { Box } from '@mui/system';
 import { getInitiales, stringAvatar } from '@/middlewares/helpers';
 import SendIcon from '@mui/icons-material/Send';
+import { RoomsTitle } from '@/components/ui/rooms/Title';
+import { CircularProgress } from '@mui/material';
 
 const Room = () => {
   const auth: AuthContextType | null = useAuth();
@@ -23,6 +25,8 @@ const Room = () => {
   const hasEnteredRef = useRef(false);
   const [roomName, setRoomName] = useState<string>('');
   const [messages, setMessages] = useState<MessageType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   async function enterRoom({ roomId, userId }: { roomId: string; userId: string }) {
     try {
@@ -68,6 +72,8 @@ const Room = () => {
         }
       } catch (e) {
         console.error('❌ Failed to fetch messages:', e);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -109,15 +115,19 @@ const Room = () => {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     try {
       e.preventDefault();
-      const formData = new FormData(e.currentTarget);
-      const content = formData.get('content') as string;
+      const content = inputRef.current?.value.trim();
+      if (!content) return;
       const message = await postMessage({ roomId, content });
       if (message?.id && socket?.connected) {
         socket.emit('send message', { roomId, content }, (response: SocketResponseProps) => {
           console.log('socket emit message response', response);
         });
         const key = `${content}-${Math.random()}`;
-        setMessages(prevState => [...prevState, { key, content, userId, user: auth?.user }]);
+        setMessages(prevState => [
+          ...prevState,
+          { key, content, userId, user: auth?.user ?? undefined },
+        ]);
+        if (inputRef.current) inputRef.current.value = '';
       }
     } catch (error) {
       console.error('Error handleSubmit room send message', error);
@@ -125,9 +135,20 @@ const Room = () => {
     }
   };
 
+  if (isLoading) {
+    console.log('isLoading', isLoading);
+    return (
+      <div
+        style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}
+      >
+        <CircularProgress size="3rem" />;
+      </div>
+    );
+  }
+
   return (
     <>
-      <h2 style={{ textAlign: 'center', marginTop: '20px' }}>Welcome to {roomName}</h2>
+      <RoomsTitle title={`Welcome to ${roomName}`} />
       <Box
         component="section"
         sx={{
@@ -144,12 +165,16 @@ const Room = () => {
           return (
             <Box
               sx={{
-                boxShadow: '0 0 20px 0 rgba(0, 0, 0, 0.1)',
-                borderRadius: 2,
-                display: 'flex',
-                marginY: 1,
-                padding: 2,
-                width: '100%',
+                alignSelf: userIsSender ? 'flex-end' : 'flex-start',
+                backgroundColor: userIsSender ? '#3b82f6' : '#f3f4f6', // blue-500 or gray-100
+                color: userIsSender ? '#ffffff' : '#1f2937', // white or gray-800
+                px: 2,
+                py: 1.5,
+                borderRadius: 3,
+                maxWidth: '70%',
+                mb: 1,
+                fontSize: '1rem',
+                boxShadow: 1,
               }}
               key={message.key}
             >
@@ -169,27 +194,44 @@ const Room = () => {
         })}
         <Box
           sx={{
-            display: 'flex',
-            flexDirection: 'row-reverse',
             width: '100%',
-            marginTop: 5,
-            alignItems: 'center',
+            backgroundColor: '#f3f4f6',
+            borderRadius: '9999px',
+            padding: '10px 16px',
+            fontSize: '1rem',
+            color: '#1f2937',
+            border: '1px solid #e5e7eb',
+            outline: 'none',
+            marginTop: '5rem',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+            '&::placeholder': {
+              color: '#9ca3af',
+              opacity: 1,
+            },
+            '&:focus': {
+              border: '1px solid #3b82f6',
+              boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.3)',
+            },
           }}
         >
           <form
             style={{
               display: 'flex',
-              alignItems: 'center', // Vertically center
-              gap: '8px', // Optional spacing between elements
+              alignItems: 'center',
+              gap: '8px',
+              width: '100%',
             }}
             onSubmit={handleSubmit}
           >
             <TextField
-              sx={{ padding: '8px 0', width: '25rem' }}
+              inputRef={inputRef}
+              sx={{ padding: '8px 0', width: '100%' }}
               name="content"
               id="content"
-              label="Type your message here ..."
+              aria-placeholder=""
+              placeholder="Type your message here ..."
               variant="standard"
+              defaultValue=""
               required
             />
             <Button type="submit" endIcon={<SendIcon />}></Button>
